@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Electrical Panel</title>
+  <link rel="stylesheet" href="../theme.css">
+  <link rel="stylesheet" href="electrical-panel.css?v=1">
+</head>
+<body>
+
+  <div class="container">
+    <!-- Breakers Bar - FIXĂ (Toate cele 6 siguranțe originale păstrate) -->
+    <div class="din-rail-wrap">
+      <div class="din-rail" id="din-rail">
+        <div class="mcb c25" id="mcb-general" onclick="handleMcbClick('circuit-general')">
+          <span class="mcb-brand">Legrand</span>
+          <div class="mcb-switch-slot"><div class="mcb-toggle"></div></div>
+          <span class="mcb-rating">C25</span>
+        </div>
+
+        <div class="mcb c20" id="mcb-hol" onclick="handleMcbClick('circuit-hol')">
+          <span class="mcb-brand">Legrand</span>
+          <div class="mcb-switch-slot"><div class="mcb-toggle"></div></div>
+          <span class="mcb-rating">C20</span>
+        </div>
+
+        <div class="mcb c16" id="mcb-baie" onclick="handleMcbClick('circuit-baie')">
+          <span class="mcb-brand">Legrand</span>
+          <div class="mcb-switch-slot"><div class="mcb-toggle"></div></div>
+          <span class="mcb-rating">C16</span>
+        </div>
+
+        <div class="mcb c16" id="mcb-kitchen" onclick="handleMcbClick('circuit-kitchen')">
+          <span class="mcb-brand">Legrand</span>
+          <div class="mcb-switch-slot"><div class="mcb-toggle"></div></div>
+          <span class="mcb-rating">C16</span>
+        </div>
+
+        <div class="mcb c16" id="mcb-living" onclick="handleMcbClick('circuit-living')">
+          <span class="mcb-brand">Legrand</span>
+          <div class="mcb-switch-slot"><div class="mcb-toggle"></div></div>
+          <span class="mcb-rating">C16</span>
+        </div>
+
+        <div class="mcb c10" id="mcb-lights" onclick="handleMcbClick('circuit-lights')">
+          <span class="mcb-brand">Legrand</span>
+          <div class="mcb-switch-slot"><div class="mcb-toggle"></div></div>
+          <span class="mcb-rating">C10</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lista Circuite - SCROLLABILĂ (Toate cele 6 carduri originale cu textele actualizate) -->
+    <div class="scroll-area">
+      <div class="circuit-list">
+
+        <!-- Siguranță Generală C25 -->
+        <div class="circuit-card c25" id="circuit-general" data-breaker-id="mcb-general" onclick="handleCardClick('circuit-general')">
+          <div class="circuit-header">
+            <div class="circuit-left">
+              <span class="chip c25">C25</span>
+              <div class="circuit-info">
+                <span class="circuit-title">Siguranță Generală</span>
+                <span class="circuit-sub">Oprire totală instalație</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Circuit 4 — Siguranță C20 (Utilități / Climatizare) -->
+        <div class="circuit-card c20" id="circuit-hol" data-breaker-id="mcb-hol" onclick="handleCardClick('circuit-hol')">
+          <div class="circuit-header">
+            <div class="circuit-left">
+              <span class="chip c20">C20</span>
+              <div class="circuit-info">
+                <span class="circuit-title">Circuit 4 — Utilități / Climatizare</span>
+                <span class="circuit-sub">Hol, Camera de zi (2 locații)</span>
+              </div>
+            </div>
+            <span class="expand-chevron">▼</span>
+          </div>
+
+          <div class="details-panel">
+            <div class="sockets-grid">
+              <div class="socket-row">
+                <span class="socket-label">Hol</span>
+                <span class="socket-devices">1 × priză simplă — Ușă intrare</span>
+              </div>
+              <div class="socket-row">
+                <span class="socket-label">Camera de zi</span>
+                <span class="socket-devices">1 × priză simplă — Perete / tavan (aer condiționat)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Circuit 3 — Siguranță C16 (Dormitor, Baie) -->
+        <div class="circuit-card c16" id="circuit-baie" data-breaker-id="mcb-baie" onclick="handleCardClick('circuit-baie')">
+          <div class="circuit-header">
+            <div class="circuit-left">
+              <span class="chip c16">C16</span>
+              <div class="circuit-info">
+                <span class="circuit-title">Circuit 3 — Dormitor, Baie</span>
+                <span class="circuit-sub">4 locații de priză</span>
+              </div>
+            </div>
+            <span class="expand-chevron">▼</span>
+          </div>
+
+          <div class="details-panel">
+            <div class="sockets-grid">
+              <div class="socket-row">
+                <span class="socket-label">Dormitor</span>
+                <span class="socket-devices">2 × priză dublă — Pat (noptiere)<br>1 × priză dublă — Perete</span>
+              </div>
+              <div class="socket-row">
+                <span class="socket-label">Baie</span>
+                <span class="socket-devices">1 × priză simplă — Baie</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Circuit 2 — Siguranță C16 (Bucătărie) -->
+        <div class="circuit-card c16" id="circuit-kitchen" data-breaker-id="mcb-kitchen" onclick="handleCardClick('circuit-kitchen')">
+          <div class="circuit-header">
+            <div class="circuit-left">
+              <span class="chip c16">C16</span>
+              <div class="circuit-info">
+                <span class="circuit-title">Circuit 2 — Bucătărie</span>
+                <span class="circuit-sub">4 locații • 7 posturi</span>
+              </div>
+            </div>
+            <span class="expand-chevron">▼</span>
+          </div>
+
+          <div class="details-panel">
+            <div class="sockets-grid">
+              <div class="socket-row">
+                <span class="socket-label">Electrocasnice</span>
+                <span class="socket-devices">1 × priză dublă — Mașină de spălat</span>
+              </div>
+              <div class="socket-row">
+                <span class="socket-label">Încălzire</span>
+                <span class="socket-devices">1 × priză dublă — Centrală termică</span>
+              </div>
+              <div class="socket-row">
+                <span class="socket-label">Blat de lucru</span>
+                <span class="socket-devices">1 × priză dublă — Zonă chiuvetă / blat</span>
+              </div>
+              <div class="socket-row">
+                <span class="socket-label">Gătire</span>
+                <span class="socket-devices">1 × priză simplă — Cuptor</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Circuit 1 — Siguranță C16 (Living, Hol, Cameră Copii) -->
+        <div class="circuit-card c16" id="circuit-living" data-breaker-id="mcb-living" onclick="handleCardClick('circuit-living')">
+          <div class="circuit-header">
+            <div class="circuit-left">
+              <span class="chip c16">C16</span>
+              <div class="circuit-info">
+                <span class="circuit-title">Circuit 1 — Bucătărie, Cameră de zi, Hol, Cameră Copii</span>
+                <span class="circuit-sub">Bucătărie, Camera de zi, Hol, Cameră copii (7 locații)</span>
+              </div>
+            </div>
+            <span class="expand-chevron">▼</span>
+          </div>
+
+          <div class="details-panel">
+            <div class="sockets-grid">
+              <div class="socket-row">
+                <span class="socket-label">Bucătărie</span>
+                <span class="socket-devices">1 × priză simplă — Frigider, AC</span>
+              </div>
+              <div class="socket-row">
+                <span class="socket-label">Camera de zi</span>
+                <span class="socket-devices">1 × priză dublă — TV<br>1 × priză dublă — Calculator<br>1 × priză dublă — Canapea living</span>
+              </div>
+              <div class="socket-row">
+                <span class="socket-label">Hol</span>
+                <span class="socket-devices">1 × priză simplă — Hol ușă baie</span>
+              </div>
+              <div class="socket-row">
+                <span class="socket-label">Cameră copii</span>
+                <span class="socket-devices">1 × priză dublă — Google Home<br>2 × priză dublă — Pat (stânga / dreapta)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Siguranță C10 — Iluminat -->
+        <div class="circuit-card c10" id="circuit-lights" data-breaker-id="mcb-lights" onclick="handleCardClick('circuit-lights')">
+          <div class="circuit-header">
+            <div class="circuit-left">
+              <span class="chip c10">C10</span>
+              <div class="circuit-info">
+                <span class="circuit-title">Iluminat</span>
+                <span class="circuit-sub">Toate circuitele de corpuri iluminat</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="electrical-panel.js?v=1"></script>
+</body>
+</html>
