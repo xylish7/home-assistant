@@ -91,8 +91,8 @@ export const floorplanSvg = `
             <line class="door-leaf" x1="720" y1="434" x2="778" y2="434" />
             <path class="door-arc" d="M 720 376 A 58 58 0 0 1 778 434" />
 
-            <line class="door-leaf" x1="824" y1="438" x2="882" y2="438" />
-            <path class="door-arc" d="M 824 380 A 58 58 0 0 1 882 438" />
+            <line class="door-leaf" x1="824" y1="380" x2="882" y2="380" />
+            <path class="door-arc" d="M 824 438 A 58 58 0 0 0 882 380" />
           </g>
 
           <!-- ==================== FIXTURES ==================== -->
