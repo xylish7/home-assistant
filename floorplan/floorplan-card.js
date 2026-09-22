@@ -1,11 +1,11 @@
-import { floorplanSvg } from './floorplan-svg.js?v=4';
+import { floorplanSvg } from './floorplan-svg.js?v=8';
 
 class ApartmentFloorplanCard extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
-    this._showDimensions = true;
-    this._showDoors = true;
+    this._showDimensions = false;
+    this._showDoors = false;
     this._rendered = false;
   }
 
@@ -32,17 +32,13 @@ class ApartmentFloorplanCard extends HTMLElement {
   _render() {
     this.shadowRoot.innerHTML = `
       <style>
-        @import url('/local/custom/floorplan/floorplan-card.css?v=2');
+        @import url('/local/custom/floorplan/floorplan-card.css?v=3');
       </style>
 
       <div class="toolbar-wrap">
-        <div class="toolbar-title">
-          Plan Apartament
-          <span>Interactiv</span>
-        </div>
         <div class="btn-group">
-          <button id="toggle-dims" class="chip-btn active btn-dims">📏 Cote</button>
-          <button id="toggle-doors" class="chip-btn active btn-doors">🚪 Uși</button>
+          <button id="toggle-dims" class="chip-btn btn-dims">📏 Cote</button>
+          <button id="toggle-doors" class="chip-btn btn-doors">🚪 Uși</button>
         </div>
       </div>
 
@@ -59,6 +55,8 @@ class ApartmentFloorplanCard extends HTMLElement {
     const doorsLayer = this.shadowRoot.getElementById('doors');
 
     if (dimsBtn && dimsLayer) {
+      dimsLayer.style.display = this._showDimensions ? '' : 'none';
+      dimsBtn.classList.toggle('active', this._showDimensions);
       dimsBtn.addEventListener('click', () => {
         this._showDimensions = !this._showDimensions;
         dimsBtn.classList.toggle('active', this._showDimensions);
@@ -67,6 +65,8 @@ class ApartmentFloorplanCard extends HTMLElement {
     }
 
     if (doorsBtn && doorsLayer) {
+      doorsLayer.style.display = this._showDoors ? '' : 'none';
+      doorsBtn.classList.toggle('active', this._showDoors);
       doorsBtn.addEventListener('click', () => {
         this._showDoors = !this._showDoors;
         doorsBtn.classList.toggle('active', this._showDoors);

@@ -67,12 +67,14 @@ export const floorplanSvg = `
             <line class="window-glass" x1="53" y1="408" x2="53" y2="512" />
             <line class="window-glass" x1="59" y1="408" x2="59" y2="512" />
             <line class="window-glass" x1="48" y1="460" x2="64" y2="460" />
-          </g>
+            <!-- Fixed glass panel next to door -->
+            <line class="wall-thin" x1="108" y1="214" x2="136" y2="214" />
+            <line class="window-glass" x1="122" y1="172" x2="122" y2="214" />
+            <line class="window-glass" x1="136" y1="172" x2="136" y2="214" />
 
+          </g>
           <!-- ==================== DOORS ==================== -->
-          <g id="doors">
-            <line class="door-leaf" x1="136" y1="172" x2="168" y2="198" />
-            <path class="door-arc" d="M 136 214 A 42 42 0 0 0 168 198" />
+          <g id="doors" style="display: none;">
             <line class="door-leaf" x1="136" y1="256" x2="168" y2="230" />
             <path class="door-arc" d="M 136 214 A 42 42 0 0 1 168 230" />
 
@@ -113,7 +115,7 @@ export const floorplanSvg = `
           </g>
 
           <!-- ==================== DIMENSIONS ==================== -->
-          <g id="dimensions">
+          <g id="dimensions" style="display: none;">
             <line class="dim-line" x1="30" y1="38" x2="30" y2="328" /><line class="dim-tick" x1="26" y1="38" x2="34" y2="38" /><line class="dim-tick" x1="26" y1="328" x2="34" y2="328" /><text class="dim-text" x="30" y="185" transform="rotate(-90 30 185)" dy="-8">405</text>
             <line class="dim-line" x1="96" y1="38" x2="96" y2="328" /><line class="dim-tick" x1="92" y1="38" x2="100" y2="38" /><line class="dim-tick" x1="92" y1="328" x2="100" y2="328" /><text class="dim-text" x="96" y="185" transform="rotate(-90 96 185)" dy="-8">390</text>
             <line class="dim-line" x1="38" y1="305" x2="108" y2="305" /><line class="dim-tick" x1="38" y1="301" x2="38" y2="309" /><line class="dim-tick" x1="108" y1="301" x2="108" y2="309" /><text class="dim-text" x="73" y="300">120</text>
