@@ -1,4 +1,4 @@
-import { floorplanSvg } from './floorplan-svg.js';
+import { floorplanSvg } from './floorplan-svg.js?v=2';
 
 class ApartmentFloorplanCard extends HTMLElement {
   constructor() {

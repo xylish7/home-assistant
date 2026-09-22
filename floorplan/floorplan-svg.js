@@ -107,40 +107,9 @@ export const floorplanSvg = `
             <line class="arrow" x1="752" y1="542" x2="724" y2="542" marker-end="url(#arr-left)" />
           </g>
 
-          <!-- ==================== ROOM BADGES ==================== -->
+          <!-- ==================== ROOM LABELS & SWITCHES ==================== -->
           <g id="room-labels">
-            <g class="room-group" id="group-25" data-room="25">
-              <circle class="room-badge" id="badge-25" cx="72" cy="118" r="22" />
-              <text class="room-label" x="72" y="119">25</text>
-            </g>
-            <g class="room-group" id="group-18" data-room="18">
-              <circle class="room-badge" id="badge-18" cx="342" cy="195" r="22" />
-              <text class="room-label" x="342" y="196">18</text>
-            </g>
-            <g class="room-group" id="group-21" data-room="21">
-              <circle class="room-badge" id="badge-21" cx="606" cy="172" r="22" />
-              <text class="room-label" x="606" y="173">21</text>
-            </g>
-            <g class="room-group" id="group-20" data-room="20">
-              <circle class="room-badge" id="badge-20" cx="842" cy="204" r="22" />
-              <text class="room-label" x="842" y="205">20</text>
-            </g>
-            <g class="room-group" id="group-19" data-room="19">
-              <circle class="room-badge" id="badge-19" cx="224" cy="454" r="22" />
-              <text class="room-label" x="224" y="455">19</text>
-            </g>
-            <g class="room-group" id="group-22" data-room="22">
-              <circle class="room-badge" id="badge-22" cx="528" cy="496" r="22" />
-              <text class="room-label" x="528" y="497">22</text>
-            </g>
-            <g class="room-group" id="group-23" data-room="23">
-              <circle class="room-badge" id="badge-23" cx="904" cy="428" r="22" />
-              <text class="room-label" x="904" y="429">23</text>
-            </g>
-            <g class="room-group" id="group-24" data-room="24">
-              <circle class="room-badge" id="badge-24" cx="652" cy="414" r="22" />
-              <text class="room-label" x="652" y="415">24</text>
-            </g>
+            <!-- Add custom switches/lights here -->
           </g>
 
           <!-- ==================== DIMENSIONS ==================== -->
