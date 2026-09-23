@@ -62,6 +62,11 @@ class ApartmentFloorplanCard extends HTMLElement {
       const softColor = rawColor
         ? this._hexToSoft(rawColor)
         : this._getSafetySoftColor(safetyType);
+      const isDisabled = Boolean(
+        circuit.disabled === true ||
+        circuit.disable === true ||
+        circuit.enabled === false
+      );
       return {
         id: (circuit.id || name).trim().toLowerCase(),
         name: String(name).trim(),
@@ -69,6 +74,7 @@ class ApartmentFloorplanCard extends HTMLElement {
         color,
         softColor,
         entities: Array.isArray(circuit.entities) ? circuit.entities : [],
+        disabled: isDisabled,
       };
     }
     return null;
@@ -201,7 +207,7 @@ class ApartmentFloorplanCard extends HTMLElement {
   _render() {
     this.shadowRoot.innerHTML = `
       <style>
-        @import url('/local/custom/floorplan/floorplan-card.css?v=29');
+        @import url('/local/custom/floorplan/floorplan-card.css?v=33');
       </style>
 
       <div class="toolbar-wrap">
@@ -408,23 +414,54 @@ class ApartmentFloorplanCard extends HTMLElement {
     this._panelPopoverOpen = false;
   }
 
+  _updatePanelPopoverState() {
+    const popover = this.shadowRoot.getElementById("panel-popover");
+    if (!popover) return;
+    const resetBtn = popover.querySelector("#panel-btn-reset");
+    if (resetBtn) {
+      resetBtn.style.display = this._selectedCircuit ? "inline-flex" : "none";
+    }
+    const mcbs = popover.querySelectorAll(".mcb");
+    mcbs.forEach((mcb) => {
+      const isDisabled = mcb.classList.contains("disabled") || mcb.getAttribute("data-disabled") === "true";
+      if (isDisabled) {
+        mcb.classList.remove("active");
+        return;
+      }
+      const dataId = mcb.getAttribute("data-circuit-id");
+      const isActive = Boolean(this._selectedCircuit && this._selectedCircuit === dataId);
+      mcb.classList.toggle("active", isActive);
+    });
+  }
+
   _renderPanelPopover() {
     const popover = this.shadowRoot.getElementById("panel-popover");
     const container = this.shadowRoot.querySelector(".svg-container");
     if (!popover || !container) return;
 
+    const oldRail = popover.querySelector("#panel-din-rail");
+    const savedScroll = oldRail ? oldRail.scrollLeft : 0;
+
     const circuits = this._getAvailableCircuits();
     const title = this._panelDev?.name || "Tablou Electric";
+    const rawIcon = this._panelDev?.icon || "mdi:electric-switch";
+    const panelIcon = (!rawIcon || rawIcon === "mdi:fuse-box") ? "mdi:electric-switch" : rawIcon;
 
     const hasExplicitGeneral = circuits.some(
       (c) => c.id === "general" || c.id === "all" || c.name.toLowerCase() === "general"
     );
 
+    const isGeneralDisabled = Boolean(this._panelDev?.disable_general || this._panelDev?.general_disabled);
+
     let generalMcbHtml = "";
     if (!hasExplicitGeneral) {
-      const isGeneralActive = !this._selectedCircuit;
+      const isGeneralActive = Boolean(
+        !isGeneralDisabled &&
+        this._selectedCircuit &&
+        (this._selectedCircuit === "general" || this._selectedCircuit === "all")
+      );
       generalMcbHtml = `
-        <div class="mcb c25 ${isGeneralActive ? "active" : ""}" data-circuit-id="" title="Siguranța Generală (Toate circuitele)">
+        <div class="mcb c25 ${isGeneralActive ? "active" : ""} ${isGeneralDisabled ? "disabled" : ""}" data-circuit-id="general" data-disabled="${isGeneralDisabled ? "true" : "false"}" title="Siguranța Generală${isGeneralDisabled ? " - Dezactivat" : ""}">
           <span class="mcb-circuit-title">General</span>
           <span class="mcb-brand">Legrand</span>
           <div class="mcb-switch-slot"><div class="mcb-toggle"></div></div>
@@ -445,18 +482,19 @@ class ApartmentFloorplanCard extends HTMLElement {
         else if (ratingLower.includes("c10")) ratingClass = "c10";
         else if (ratingLower.includes("c16")) ratingClass = "c16";
 
-        const isActive = isGeneral
-          ? !this._selectedCircuit || this._selectedCircuit === c.id
-          : this._selectedCircuit === c.id;
+        const isDisabled = Boolean(c.disabled);
+        const isActive = Boolean(!isDisabled && this._selectedCircuit && this._selectedCircuit === c.id);
 
-        const dataId = isGeneral ? "" : c.id;
+        const dataId = c.id;
 
         const customStyle = c.color
           ? ` style="--mcb-accent: ${c.color}; --mcb-soft: ${c.softColor};"`
           : "";
 
+        const titleText = `${c.name} (${rating})${isDisabled ? " - Dezactivat" : ""}`;
+
         return `
-        <div class="mcb ${ratingClass} ${isActive ? "active" : ""}" data-circuit-id="${dataId}" title="${c.name} (${rating})"${customStyle}>
+        <div class="mcb ${ratingClass} ${isActive ? "active" : ""} ${isDisabled ? "disabled" : ""}" data-circuit-id="${dataId}" data-disabled="${isDisabled ? "true" : "false"}" title="${titleText}"${customStyle}>
           <span class="mcb-circuit-title">${c.name}</span>
           <span class="mcb-brand">Legrand</span>
           <div class="mcb-switch-slot"><div class="mcb-toggle"></div></div>
@@ -470,15 +508,11 @@ class ApartmentFloorplanCard extends HTMLElement {
       <div class="panel-popover-card">
         <div class="panel-popover-header">
           <div class="panel-header-left">
-            <ha-icon icon="mdi:fuse-box"></ha-icon>
+            <ha-icon icon="${panelIcon}"></ha-icon>
             <span class="panel-header-title">${title}</span>
           </div>
           <div class="panel-header-actions">
-            ${
-              this._selectedCircuit
-                ? '<button class="panel-reset-btn" id="panel-btn-reset" title="Resetează filtrul">⚡ Toate</button>'
-                : ""
-            }
+            <button class="panel-reset-btn" id="panel-btn-reset" title="Resetează" style="display: ${this._selectedCircuit ? "inline-flex" : "none"};">Reset</button>
             <button class="panel-close-btn" id="panel-btn-close" title="Închide">✕</button>
           </div>
         </div>
@@ -489,6 +523,11 @@ class ApartmentFloorplanCard extends HTMLElement {
         </div>
       </div>
     `;
+
+    const newRail = popover.querySelector("#panel-din-rail");
+    if (newRail && savedScroll > 0) {
+      newRail.scrollLeft = savedScroll;
+    }
 
     // Position popover relative to anchor
     if (this._panelAnchorEl) {
@@ -522,7 +561,7 @@ class ApartmentFloorplanCard extends HTMLElement {
         e.stopPropagation();
         this._selectedCircuit = "";
         this._applyCircuitHighlight();
-        this._renderPanelPopover();
+        this._updatePanelPopoverState();
       });
     }
 
@@ -530,14 +569,17 @@ class ApartmentFloorplanCard extends HTMLElement {
     mcbs.forEach((mcb) => {
       mcb.addEventListener("click", (e) => {
         e.stopPropagation();
+        const isDisabled = mcb.classList.contains("disabled") || mcb.getAttribute("data-disabled") === "true";
+        if (isDisabled) return;
+
         const circId = mcb.getAttribute("data-circuit-id");
-        if (circId === "" || this._selectedCircuit === circId) {
+        if (!circId || this._selectedCircuit === circId) {
           this._selectedCircuit = "";
         } else {
           this._selectedCircuit = circId;
         }
         this._applyCircuitHighlight();
-        this._renderPanelPopover();
+        this._updatePanelPopoverState();
       });
     });
   }
@@ -568,10 +610,12 @@ class ApartmentFloorplanCard extends HTMLElement {
         const iconSize = isPanel ? 18 : 16;
 
         let icon = dev.icon;
-        if (!icon || icon === "??" || icon === "?") {
-          if (isPanel) {
-            icon = "mdi:fuse-box";
-          } else if (
+        if (isPanel) {
+          icon = (!icon || icon === "mdi:fuse-box" || icon === "??" || icon === "?")
+            ? "mdi:electric-switch"
+            : icon;
+        } else if (!icon || icon === "??" || icon === "?") {
+          if (
             dev.type === "socket" ||
             Array.isArray(dev.entries) ||
             dev.slots
@@ -852,7 +896,7 @@ class ApartmentFloorplanCard extends HTMLElement {
       if (devCirc) {
         const ratingStr = devCirc.safety_type ? ` • ${devCirc.safety_type}` : "";
         circuitBadgeHtml = `
-          <div class="popover-circuit-tag" style="--tag-color: ${devCirc.color}; --tag-soft: ${devCirc.softColor};">
+          <div class="popover-circuit-tag" style="--tag-color: ${devCirc.color};">
             <ha-icon icon="mdi:flash"></ha-icon>
             <span>${devCirc.name}${ratingStr}</span>
           </div>
@@ -861,12 +905,12 @@ class ApartmentFloorplanCard extends HTMLElement {
 
       popover.innerHTML = `
         <div class="popover-header">
-          ${iconHtml}
-          <div class="popover-title-wrap">
+          <div class="popover-header-row">
+            <div class="popover-icon">${iconHtml}</div>
             <span class="popover-title">${devName}</span>
-            ${circuitBadgeHtml}
+            ${totalBadge}
           </div>
-          ${totalBadge}
+          ${circuitBadgeHtml}
         </div>
         ${contentHtml}
       `;
