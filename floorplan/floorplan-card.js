@@ -1,4 +1,4 @@
-﻿import { floorplanSvg } from "./floorplan-svg.js?v=8";
+import { floorplanSvg } from "./floorplan-svg.js?v=8";
 
 class ApartmentFloorplanCard extends HTMLElement {
   constructor() {
@@ -6,7 +6,9 @@ class ApartmentFloorplanCard extends HTMLElement {
     this.attachShadow({ mode: "open" });
     this._showDimensions = false;
     this._showDoors = false;
+    this._selectedCircuit = "";
     this._rendered = false;
+    this._panelPopoverOpen = false;
   }
 
   setConfig(config) {
@@ -14,6 +16,9 @@ class ApartmentFloorplanCard extends HTMLElement {
     if (this._rendered) {
       this._renderDevices();
       this._updateStates();
+      if (this._panelPopoverOpen) {
+        this._renderPanelPopover();
+      }
     }
   }
 
@@ -29,10 +34,174 @@ class ApartmentFloorplanCard extends HTMLElement {
     }
   }
 
+  _parseCircuit(circuit) {
+    if (!circuit) return null;
+    if (typeof circuit === "string") {
+      const trimmed = circuit.trim();
+      if (!trimmed) return null;
+      return {
+        id: trimmed.toLowerCase(),
+        name: trimmed,
+        safety_type: "",
+        color: this._getSafetyColor(""),
+        softColor: this._getSafetySoftColor(""),
+        entities: [],
+      };
+    }
+    if (typeof circuit === "object") {
+      const name = circuit.name || circuit.title || circuit.id || "";
+      if (!name) return null;
+      const safetyType =
+        circuit.safety_type ||
+        circuit.type ||
+        circuit.rating ||
+        circuit.breaker ||
+        "";
+      const rawColor = circuit.color || circuit.colour || null;
+      const color = rawColor || this._getSafetyColor(safetyType);
+      const softColor = rawColor
+        ? this._hexToSoft(rawColor)
+        : this._getSafetySoftColor(safetyType);
+      return {
+        id: (circuit.id || name).trim().toLowerCase(),
+        name: String(name).trim(),
+        safety_type: safetyType ? String(safetyType).trim().toUpperCase() : "",
+        color,
+        softColor,
+        entities: Array.isArray(circuit.entities) ? circuit.entities : [],
+      };
+    }
+    return null;
+  }
+
+  _getSafetyColor(safetyType) {
+    const s = String(safetyType || "").toUpperCase();
+    if (s.includes("C25")) return "var(--c25-color, #f7768e)";
+    if (s.includes("C20")) return "var(--c20-color, #e0af68)";
+    if (s.includes("C16")) return "var(--c16-color, #7aa2f7)";
+    if (s.includes("C10")) return "var(--c10-color, #9ece6a)";
+    return "var(--c16-color, #7aa2f7)";
+  }
+
+  _getSafetySoftColor(safetyType) {
+    const s = String(safetyType || "").toUpperCase();
+    if (s.includes("C25")) return "var(--c25-soft, rgba(247, 118, 142, 0.22))";
+    if (s.includes("C20")) return "var(--c20-soft, rgba(224, 175, 104, 0.22))";
+    if (s.includes("C16")) return "var(--c16-soft, rgba(122, 162, 247, 0.22))";
+    if (s.includes("C10")) return "var(--c10-soft, rgba(158, 206, 106, 0.22))";
+    return "var(--c16-soft, rgba(122, 162, 247, 0.22))";
+  }
+
+  _hexToSoft(color) {
+    if (!color) return "rgba(122, 162, 247, 0.22)";
+    if (color.startsWith("rgba") || color.startsWith("var")) return color;
+    if (color.startsWith("#")) {
+      const hex = color.replace("#", "");
+      if (hex.length === 6) {
+        const r = parseInt(hex.substring(0, 2), 16);
+        const g = parseInt(hex.substring(2, 4), 16);
+        const b = parseInt(hex.substring(4, 6), 16);
+        return `rgba(${r}, ${g}, ${b}, 0.22)`;
+      }
+      if (hex.length === 3) {
+        const r = parseInt(hex[0] + hex[0], 16);
+        const g = parseInt(hex[1] + hex[1], 16);
+        const b = parseInt(hex[2] + hex[2], 16);
+        return `rgba(${r}, ${g}, ${b}, 0.22)`;
+      }
+    }
+    return color;
+  }
+
+  _getAvailableCircuits() {
+    const circuitsMap = new Map();
+    const devices = this._config?.devices || [];
+
+    // 1. Primary: check circuits defined on panel device
+    const panelDev = devices.find(
+      (d) =>
+        d.type === "panel" ||
+        d.type === "electrical-panel" ||
+        d.type === "electric-panel" ||
+        d.panel === true
+    );
+
+    if (panelDev && Array.isArray(panelDev.circuits)) {
+      panelDev.circuits.forEach((c) => {
+        const parsed = this._parseCircuit(c);
+        if (parsed && !circuitsMap.has(parsed.id)) {
+          circuitsMap.set(parsed.id, parsed);
+        }
+      });
+    }
+
+    // 2. Secondary: check root config.circuits
+    if (Array.isArray(this._config?.circuits)) {
+      this._config.circuits.forEach((c) => {
+        const parsed = this._parseCircuit(c);
+        if (parsed && !circuitsMap.has(parsed.id)) {
+          circuitsMap.set(parsed.id, parsed);
+        }
+      });
+    }
+
+    // 3. Fallback: discover inline circuit objects from devices
+    devices.forEach((dev) => {
+      if (dev.circuit && typeof dev.circuit === "object") {
+        const parsed = this._parseCircuit(dev.circuit);
+        if (parsed && !circuitsMap.has(parsed.id)) {
+          circuitsMap.set(parsed.id, parsed);
+        }
+      }
+    });
+
+    return Array.from(circuitsMap.values());
+  }
+
+  _getDeviceCircuit(dev, availableCircuits = null) {
+    if (!dev || !dev.circuit) return null;
+    const circuits = availableCircuits || this._getAvailableCircuits();
+
+    if (typeof dev.circuit === "string") {
+      const ref = dev.circuit.trim().toLowerCase();
+      // Match by ID or Name
+      const found = circuits.find(
+        (c) => c.id === ref || c.name.toLowerCase() === ref
+      );
+      if (found) return found;
+      return this._parseCircuit(dev.circuit);
+    }
+
+    if (typeof dev.circuit === "object") {
+      const id = (dev.circuit.id || dev.circuit.name || "").trim().toLowerCase();
+      const parent = circuits.find(
+        (c) =>
+          c.id === id ||
+          (dev.circuit.name && c.name.toLowerCase() === dev.circuit.name.toLowerCase())
+      );
+      if (parent) {
+        return {
+          ...parent,
+          ...dev.circuit,
+          id: parent.id,
+          name: dev.circuit.name || parent.name,
+          safety_type: dev.circuit.safety_type || parent.safety_type,
+          color: dev.circuit.color || parent.color,
+          softColor: dev.circuit.color
+            ? this._hexToSoft(dev.circuit.color)
+            : parent.softColor,
+        };
+      }
+      return this._parseCircuit(dev.circuit);
+    }
+
+    return null;
+  }
+
   _render() {
     this.shadowRoot.innerHTML = `
       <style>
-        @import url('/local/custom/floorplan/floorplan-card.css?v=15');
+        @import url('/local/custom/floorplan/floorplan-card.css?v=29');
       </style>
 
       <div class="toolbar-wrap">
@@ -46,6 +215,7 @@ class ApartmentFloorplanCard extends HTMLElement {
         ${floorplanSvg}
         <div id="coord-toast" class="coord-toast"></div>
         <div id="fp-popover" class="fp-popover"></div>
+        <div id="panel-popover" class="fp-panel-popover"></div>
       </div>
     `;
 
@@ -87,9 +257,15 @@ class ApartmentFloorplanCard extends HTMLElement {
         if (
           e.target.closest(".fp-device") ||
           e.target.closest(".room-group") ||
-          e.target.closest(".chip-btn")
+          e.target.closest(".chip-btn") ||
+          e.target.closest(".fp-panel-popover")
         )
           return;
+
+        // If clicking outside on SVG canvas, close panel popover if open
+        if (this._panelPopoverOpen && !e.target.closest(".fp-panel-popover")) {
+          this._hidePanelPopover();
+        }
 
         const pt = svgEl.createSVGPoint();
         pt.x = e.clientX;
@@ -130,6 +306,242 @@ class ApartmentFloorplanCard extends HTMLElement {
     this._updateStates();
   }
 
+  _applyCircuitHighlight() {
+    const selectedId = this._selectedCircuit;
+    const devices = this._config?.devices || [];
+    const circuits = this._getAvailableCircuits();
+    const activeCirc = circuits.find((c) => c.id === selectedId);
+
+    devices.forEach((dev, idx) => {
+      const el = this.shadowRoot.getElementById(`fp-device-${idx}`);
+      if (!el) return;
+
+      const isPanel =
+        dev.type === "panel" ||
+        dev.type === "electrical-panel" ||
+        dev.type === "electric-panel" ||
+        dev.panel === true;
+
+      if (isPanel) {
+        el.classList.remove("circuit-dimmed");
+        if (selectedId) {
+          el.classList.add("panel-active");
+          el.style.setProperty(
+            "--circuit-color",
+            activeCirc ? activeCirc.color : "var(--c16-color)"
+          );
+        } else {
+          el.classList.remove("panel-active");
+          el.style.removeProperty("--circuit-color");
+        }
+        return;
+      }
+
+      if (!selectedId) {
+        el.classList.remove("circuit-highlighted", "circuit-dimmed");
+        el.style.removeProperty("--circuit-color");
+        el.style.removeProperty("--circuit-soft");
+      } else {
+        const devCirc = this._getDeviceCircuit(dev, circuits);
+        const matches = devCirc && devCirc.id === selectedId;
+
+        if (matches) {
+          el.classList.add("circuit-highlighted");
+          el.classList.remove("circuit-dimmed");
+          el.style.setProperty(
+            "--circuit-color",
+            activeCirc ? activeCirc.color : devCirc.color
+          );
+          el.style.setProperty(
+            "--circuit-soft",
+            activeCirc ? activeCirc.softColor : devCirc.softColor
+          );
+        } else {
+          el.classList.remove("circuit-highlighted");
+          el.classList.add("circuit-dimmed");
+          el.style.removeProperty("--circuit-color");
+          el.style.removeProperty("--circuit-soft");
+        }
+      }
+    });
+
+    const roomGroups = this.shadowRoot.querySelectorAll(".room-group");
+    roomGroups.forEach((group) => {
+      if (!selectedId) {
+        group.classList.remove("circuit-dimmed", "circuit-highlighted");
+      } else {
+        const roomNum = group.getAttribute("data-room");
+        const entityId = this._config?.entities?.[roomNum];
+        const isMatchedEntity =
+          activeCirc?.entities &&
+          entityId &&
+          activeCirc.entities.includes(entityId);
+        if (isMatchedEntity) {
+          group.classList.remove("circuit-dimmed");
+          group.classList.add("circuit-highlighted");
+        } else if (activeCirc?.entities?.length) {
+          group.classList.add("circuit-dimmed");
+          group.classList.remove("circuit-highlighted");
+        }
+      }
+    });
+  }
+
+  _showPanelPopover(anchorEl, dev) {
+    const popover = this.shadowRoot.getElementById("panel-popover");
+    const container = this.shadowRoot.querySelector(".svg-container");
+    if (!popover || !container) return;
+
+    this._panelAnchorEl = anchorEl;
+    this._panelDev = dev;
+    this._panelPopoverOpen = true;
+
+    this._renderPanelPopover();
+    popover.classList.add("visible");
+  }
+
+  _hidePanelPopover() {
+    const popover = this.shadowRoot.getElementById("panel-popover");
+    if (popover) {
+      popover.classList.remove("visible");
+    }
+    this._panelPopoverOpen = false;
+  }
+
+  _renderPanelPopover() {
+    const popover = this.shadowRoot.getElementById("panel-popover");
+    const container = this.shadowRoot.querySelector(".svg-container");
+    if (!popover || !container) return;
+
+    const circuits = this._getAvailableCircuits();
+    const title = this._panelDev?.name || "Tablou Electric";
+
+    const hasExplicitGeneral = circuits.some(
+      (c) => c.id === "general" || c.id === "all" || c.name.toLowerCase() === "general"
+    );
+
+    let generalMcbHtml = "";
+    if (!hasExplicitGeneral) {
+      const isGeneralActive = !this._selectedCircuit;
+      generalMcbHtml = `
+        <div class="mcb c25 ${isGeneralActive ? "active" : ""}" data-circuit-id="" title="Siguranța Generală (Toate circuitele)">
+          <span class="mcb-circuit-title">General</span>
+          <span class="mcb-brand">Legrand</span>
+          <div class="mcb-switch-slot"><div class="mcb-toggle"></div></div>
+          <span class="mcb-rating">C25</span>
+        </div>
+      `;
+    }
+
+    const breakersHtml = circuits
+      .map((c) => {
+        const isGeneral =
+          c.id === "general" || c.id === "all" || c.name.toLowerCase() === "general";
+        const rating = c.safety_type || (isGeneral ? "C25" : "C16");
+        const ratingLower = rating.toLowerCase();
+        let ratingClass = "c16";
+        if (ratingLower.includes("c25")) ratingClass = "c25";
+        else if (ratingLower.includes("c20")) ratingClass = "c20";
+        else if (ratingLower.includes("c10")) ratingClass = "c10";
+        else if (ratingLower.includes("c16")) ratingClass = "c16";
+
+        const isActive = isGeneral
+          ? !this._selectedCircuit || this._selectedCircuit === c.id
+          : this._selectedCircuit === c.id;
+
+        const dataId = isGeneral ? "" : c.id;
+
+        const customStyle = c.color
+          ? ` style="--mcb-accent: ${c.color}; --mcb-soft: ${c.softColor};"`
+          : "";
+
+        return `
+        <div class="mcb ${ratingClass} ${isActive ? "active" : ""}" data-circuit-id="${dataId}" title="${c.name} (${rating})"${customStyle}>
+          <span class="mcb-circuit-title">${c.name}</span>
+          <span class="mcb-brand">Legrand</span>
+          <div class="mcb-switch-slot"><div class="mcb-toggle"></div></div>
+          <span class="mcb-rating">${rating}</span>
+        </div>
+      `;
+      })
+      .join("");
+
+    popover.innerHTML = `
+      <div class="panel-popover-card">
+        <div class="panel-popover-header">
+          <div class="panel-header-left">
+            <ha-icon icon="mdi:fuse-box"></ha-icon>
+            <span class="panel-header-title">${title}</span>
+          </div>
+          <div class="panel-header-actions">
+            ${
+              this._selectedCircuit
+                ? '<button class="panel-reset-btn" id="panel-btn-reset" title="Resetează filtrul">⚡ Toate</button>'
+                : ""
+            }
+            <button class="panel-close-btn" id="panel-btn-close" title="Închide">✕</button>
+          </div>
+        </div>
+
+        <div class="din-rail" id="panel-din-rail">
+            ${generalMcbHtml}
+            ${breakersHtml}
+        </div>
+      </div>
+    `;
+
+    // Position popover relative to anchor
+    if (this._panelAnchorEl) {
+      const rect = this._panelAnchorEl.getBoundingClientRect();
+      const contRect = container.getBoundingClientRect();
+      const posX = rect.left - contRect.left + rect.width / 2;
+      const posY = rect.top - contRect.top;
+
+      popover.style.left = `${posX}px`;
+      if (posY < 200) {
+        popover.style.top = `${posY + rect.height + 12}px`;
+        popover.classList.add("pos-below");
+      } else {
+        popover.style.top = `${posY - 12}px`;
+        popover.classList.remove("pos-below");
+      }
+    }
+
+    // Attach listeners inside panel popover
+    const closeBtn = popover.querySelector("#panel-btn-close");
+    if (closeBtn) {
+      closeBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this._hidePanelPopover();
+      });
+    }
+
+    const resetBtn = popover.querySelector("#panel-btn-reset");
+    if (resetBtn) {
+      resetBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this._selectedCircuit = "";
+        this._applyCircuitHighlight();
+        this._renderPanelPopover();
+      });
+    }
+
+    const mcbs = popover.querySelectorAll(".mcb");
+    mcbs.forEach((mcb) => {
+      mcb.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const circId = mcb.getAttribute("data-circuit-id");
+        if (circId === "" || this._selectedCircuit === circId) {
+          this._selectedCircuit = "";
+        } else {
+          this._selectedCircuit = circId;
+        }
+        this._applyCircuitHighlight();
+        this._renderPanelPopover();
+      });
+    });
+  }
+
   _renderDevices() {
     const layer = this.shadowRoot.getElementById("room-labels");
     if (!layer) return;
@@ -140,15 +552,26 @@ class ApartmentFloorplanCard extends HTMLElement {
       return;
     }
 
+    const circuits = this._getAvailableCircuits();
+
     layer.innerHTML = devices
       .map((dev, idx) => {
         const x = Number(dev.x ?? dev.left) || 0;
         const y = Number(dev.y ?? dev["true"] ?? dev.top) || 0;
-        const r = Number(dev.size) || 14;
-        const iconSize = 16;
+        const isPanel =
+          dev.type === "panel" ||
+          dev.type === "electrical-panel" ||
+          dev.type === "electric-panel" ||
+          dev.panel === true;
+
+        const r = Number(dev.size) || (isPanel ? 15 : 14);
+        const iconSize = isPanel ? 18 : 16;
+
         let icon = dev.icon;
         if (!icon || icon === "??" || icon === "?") {
-          if (
+          if (isPanel) {
+            icon = "mdi:fuse-box";
+          } else if (
             dev.type === "socket" ||
             Array.isArray(dev.entries) ||
             dev.slots
@@ -176,8 +599,12 @@ class ApartmentFloorplanCard extends HTMLElement {
           iconMarkup = `<text class="device-icon" text-anchor="middle" dominant-baseline="central" font-size="${Math.round(r * 1.0)}" pointer-events="none">${icon}</text>`;
         }
 
+        const devCirc = this._getDeviceCircuit(dev, circuits);
+        const circuitAttr = devCirc ? ` data-circuit="${devCirc.id}"` : "";
+        const panelClass = isPanel ? " fp-panel-device" : "";
+
         return `
-        <g class="fp-device" id="fp-device-${idx}" data-entity="${dev.entity || ""}" transform="translate(${x}, ${y})">
+        <g class="fp-device${panelClass}" id="fp-device-${idx}" data-entity="${dev.entity || ""}"${circuitAttr} transform="translate(${x}, ${y})">
           ${name}
           <circle class="device-badge" r="${r}" />
           ${iconMarkup}
@@ -195,7 +622,7 @@ class ApartmentFloorplanCard extends HTMLElement {
       const contRect = container.getBoundingClientRect();
 
       const devName =
-        dev.name || (dev.type === "socket" ? "Priză de Perete" : "Dispozitiv");
+        dev.name || (dev.type === "socket" ? "Priza de Perete" : "Dispozitiv");
       let icon =
         dev.icon ||
         (dev.type === "socket"
@@ -212,7 +639,6 @@ class ApartmentFloorplanCard extends HTMLElement {
       let totalSlots = Number(dev.slots ?? dev.entries_count) || 0;
       let rawEntries = Array.isArray(dev.entries) ? [...dev.entries] : [];
 
-      // Convert legacy strips: or outlets: into entries format
       if (
         rawEntries.length === 0 &&
         (Array.isArray(dev.strips) || Array.isArray(dev.outlets))
@@ -221,7 +647,6 @@ class ApartmentFloorplanCard extends HTMLElement {
         rawEntries = sList.map((s) => ({ strip: s }));
       }
 
-      // If totalSlots specified and greater than rawEntries.length, fill empty entries
       if (totalSlots > 0 && rawEntries.length < totalSlots) {
         while (rawEntries.length < totalSlots) {
           rawEntries.push({ empty: true });
@@ -234,9 +659,8 @@ class ApartmentFloorplanCard extends HTMLElement {
       const normalizedEntries = rawEntries.map((e, idx) => {
         const entryNum = idx + 1;
         const entryName =
-          e && typeof e === "object" && e.name ? e.name : `P${entryNum}`;
+          e && typeof e === "object" && e.name ? e.name : "P" + entryNum;
 
-        // Empty entry
         if (
           !e ||
           e === true ||
@@ -250,7 +674,6 @@ class ApartmentFloorplanCard extends HTMLElement {
           };
         }
 
-        // Strip entry
         if (e.strip || (typeof e === "object" && e.items && !e.item)) {
           const s = e.strip || e;
           const sItems = Array.isArray(s)
@@ -282,7 +705,6 @@ class ApartmentFloorplanCard extends HTMLElement {
           };
         }
 
-        // Direct item entry
         const itemVal =
           typeof e === "string"
             ? e
@@ -305,7 +727,6 @@ class ApartmentFloorplanCard extends HTMLElement {
         };
       });
 
-      // Flat connected list fallback
       const flatList = Array.isArray(dev.connected)
         ? dev.connected
         : Array.isArray(dev.plugged)
@@ -359,7 +780,7 @@ class ApartmentFloorplanCard extends HTMLElement {
                       `,
                               )
                               .join("")
-                          : '<li class="entry-empty-body">Prelungitor liber (fără consumatori)</li>'
+                          : '<li class="entry-empty-body">Prelungitor liber (fara consumatori)</li>'
                       }
                     </ul>
                   </div>
@@ -388,16 +809,15 @@ class ApartmentFloorplanCard extends HTMLElement {
                   </div>
                 `;
                 } else {
-                  // Empty entry card
                   return `
                   <div class="entry-card is-empty">
                     <div class="entry-header">
                       <span class="entry-title">${entry.name}</span>
                       <div class="entry-badges">
-                        <span class="entry-empty-tag">Liberă</span>
+                        <span class="entry-empty-tag">Libera</span>
                       </div>
                     </div>
-                    <div class="entry-empty-body">Priză disponibilă / neutilizată</div>
+                    <div class="entry-empty-body">Priza disponibila / neutilizata</div>
                   </div>
                 `;
                 }
@@ -427,10 +847,25 @@ class ApartmentFloorplanCard extends HTMLElement {
           ? `<span class="socket-total-badge">${usedCount}/${totalSlots}</span>`
           : "";
 
+      const devCirc = this._getDeviceCircuit(dev, circuits);
+      let circuitBadgeHtml = "";
+      if (devCirc) {
+        const ratingStr = devCirc.safety_type ? ` • ${devCirc.safety_type}` : "";
+        circuitBadgeHtml = `
+          <div class="popover-circuit-tag" style="--tag-color: ${devCirc.color}; --tag-soft: ${devCirc.softColor};">
+            <ha-icon icon="mdi:flash"></ha-icon>
+            <span>${devCirc.name}${ratingStr}</span>
+          </div>
+        `;
+      }
+
       popover.innerHTML = `
         <div class="popover-header">
           ${iconHtml}
-          <span class="popover-title">${devName}</span>
+          <div class="popover-title-wrap">
+            <span class="popover-title">${devName}</span>
+            ${circuitBadgeHtml}
+          </div>
           ${totalBadge}
         </div>
         ${contentHtml}
@@ -439,12 +874,12 @@ class ApartmentFloorplanCard extends HTMLElement {
       const posX = rect.left - contRect.left + rect.width / 2;
       const posY = rect.top - contRect.top;
 
-      popover.style.left = `${posX}px`;
+      popover.style.left = posX + "px";
       if (posY < 160) {
-        popover.style.top = `${posY + rect.height + 8}px`;
+        popover.style.top = (posY + rect.height + 8) + "px";
         popover.classList.add("pos-below");
       } else {
-        popover.style.top = `${posY - 8}px`;
+        popover.style.top = (posY - 8) + "px";
         popover.classList.remove("pos-below");
       }
 
@@ -457,10 +892,28 @@ class ApartmentFloorplanCard extends HTMLElement {
       }
     };
 
-    // Attach listeners for toggle or popover
+    // Attach listeners for devices
     devices.forEach((dev, idx) => {
       const el = this.shadowRoot.getElementById(`fp-device-${idx}`);
       if (!el) return;
+
+      const isPanel =
+        dev.type === "panel" ||
+        dev.type === "electrical-panel" ||
+        dev.type === "electric-panel" ||
+        dev.panel === true;
+
+      if (isPanel) {
+        el.addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (this._panelPopoverOpen) {
+            this._hidePanelPopover();
+          } else {
+            this._showPanelPopover(el, dev);
+          }
+        });
+        return;
+      }
 
       const hasEntries =
         dev.type === "socket" ||
@@ -497,6 +950,9 @@ class ApartmentFloorplanCard extends HTMLElement {
         }
       });
     });
+
+    // Apply circuit highlight after devices render
+    this._applyCircuitHighlight();
   }
 
   _updateStates() {

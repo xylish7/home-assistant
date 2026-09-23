@@ -282,6 +282,383 @@
           filter: drop-shadow(0 0 6px var(--c20-color, #e0af68));
         }
 
+        
+
+        /* ==================== ELECTRICAL PANEL DEVICE & DIN-RAIL POPOVER ==================== */
+        .fp-panel-device {
+          cursor: pointer;
+        }
+
+        .fp-panel-device .device-badge {
+          fill: #191920;
+          stroke: var(--c16-color);
+          stroke-width: 1.8;
+          transition: all 0.25s ease;
+        }
+
+        .fp-panel-device ha-icon {
+          color: var(--c16-color) !important;
+          transition: all 0.25s ease;
+        }
+
+        .fp-panel-device:hover .device-badge {
+          fill: #22222c;
+          stroke: var(--c20-color);
+          stroke-width: 2.4;
+          filter: drop-shadow(0 0 12px var(--c20-soft));
+        }
+
+        .fp-panel-device:hover ha-icon {
+          color: var(--c20-color) !important;
+        }
+
+        .fp-panel-device.panel-active .device-badge {
+          stroke: var(--circuit-color, var(--c16-color)) !important;
+          stroke-width: 2.5;
+          filter: drop-shadow(0 0 12px var(--circuit-color, var(--c16-color)));
+        }
+
+        .fp-panel-device.panel-active ha-icon {
+          color: var(--circuit-color, var(--c16-color)) !important;
+        }
+
+        /* Electrical Panel Popover Overlay */
+        .fp-panel-popover {
+          position: absolute;
+          z-index: 120;
+          transform: translate(-50%, -100%);
+          opacity: 0;
+          visibility: hidden;
+          transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.25s;
+          pointer-events: none;
+          max-width: 95vw;
+        }
+
+        .fp-panel-popover.pos-below {
+          transform: translate(-50%, 0);
+        }
+
+        .fp-panel-popover.visible {
+          opacity: 1;
+          visibility: visible;
+          pointer-events: auto;
+          transform: translate(-50%, -100%) translateY(-6px);
+        }
+
+        .fp-panel-popover.pos-below.visible {
+          transform: translate(-50%, 0) translateY(6px);
+        }
+
+        .panel-popover-card {
+          background: rgba(20, 20, 24, 0.96);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border: 1px solid var(--card-border);
+          border-radius: 18px;
+          padding: 12px 14px 14px 14px;
+          box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75), 0 4px 16px rgba(0, 0, 0, 0.5);
+          min-width: 300px;
+          max-width: 540px;
+        }
+
+        .panel-popover-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          margin-bottom: 8px;
+          padding-bottom: 0;
+          border-bottom: none;
+        }
+
+        .panel-header-left {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .panel-header-left ha-icon {
+          color: var(--c16-color);
+          --mdc-icon-size: 20px;
+          width: 20px;
+          height: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .panel-header-text {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+
+        .panel-header-title {
+          font-size: 0.84rem;
+          font-weight: 700;
+          color: var(--text-main);
+          letter-spacing: 0.2px;
+        }
+
+        .panel-header-sub {
+          font-size: 0.68rem;
+          color: var(--text-sub);
+          font-weight: 500;
+        }
+
+        .panel-header-actions {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .panel-reset-btn {
+          cursor: pointer;
+          background: var(--c16-soft);
+          border: 1px solid var(--c16-color);
+          color: var(--c16-color);
+          border-radius: 8px;
+          padding: 3px 8px;
+          font-size: 0.68rem;
+          font-weight: 600;
+          transition: all 0.2s ease;
+        }
+
+        .panel-reset-btn:hover {
+          background: var(--c16-color);
+          color: #fff;
+        }
+
+        .panel-close-btn {
+          cursor: pointer;
+          background: rgba(255, 255, 255, 0.06);
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          border-radius: 8px;
+          width: 24px;
+          height: 24px;
+          font-size: 0.72rem;
+          color: var(--text-sub);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s ease;
+        }
+
+        .panel-close-btn:hover {
+          background: rgba(255, 255, 255, 0.15);
+          color: var(--text-main);
+        }
+
+        /* DIN Rail & MCB styles identical to electrical-panel.html */
+        .din-rail-wrap {
+          flex: 0 0 auto;
+          padding: 0;
+          background: transparent;
+        }
+
+        .din-rail {
+          background: transparent;
+          border-radius: 0;
+          padding: 2px 0 6px 0;
+          display: flex;
+          gap: 8px;
+          border: none;
+          overflow-x: auto;
+          overflow-y: hidden;
+          scroll-behavior: smooth;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        .din-rail::-webkit-scrollbar {
+          height: 4px;
+        }
+
+        .din-rail::-webkit-scrollbar-track {
+          background: transparent;
+        }
+
+        .din-rail::-webkit-scrollbar-thumb {
+          background: var(--card-border);
+          border-radius: 10px;
+        }
+
+        .mcb {
+          flex: 0 0 54px;
+          background: var(--mcb-bg, #181818);
+          border: 1px solid var(--mcb-border);
+          border-radius: 12px;
+          padding: 6px 3px 5px 3px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: space-between;
+          height: 108px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+          transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+          cursor: pointer;
+          position: relative;
+          outline: none;
+          user-select: none;
+          -webkit-user-select: none;
+          box-sizing: border-box;
+        }
+
+        .mcb:hover,
+        .mcb.active {
+          background: var(--mcb-hover, #232323);
+          transform: translateY(-2px);
+          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+        }
+
+        .mcb:active {
+          transform: translateY(0) scale(0.97);
+        }
+
+        .mcb::before {
+          content: "";
+          position: absolute;
+          inset: -1px;
+          border-radius: 12px;
+          border: 1.5px solid transparent;
+          opacity: 0;
+          transition: opacity 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+          pointer-events: none;
+        }
+
+        .mcb:hover::before,
+        .mcb.active::before {
+          opacity: 1;
+        }
+
+        .c25:hover::before, .c25.active::before { border-color: var(--c25-color); box-shadow: 0 0 10px var(--c25-soft); }
+        .c20:hover::before, .c20.active::before { border-color: var(--c20-color); box-shadow: 0 0 10px var(--c20-soft); }
+        .c16:hover::before, .c16.active::before { border-color: var(--c16-color); box-shadow: 0 0 10px var(--c16-soft); }
+        .c10:hover::before, .c10.active::before { border-color: var(--c10-color); box-shadow: 0 0 10px var(--c10-soft); }
+
+        .mcb-circuit-title {
+          font-size: 8px;
+          font-weight: 700;
+          color: var(--text-main);
+          text-align: center;
+          line-height: 1.1;
+          max-width: 48px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .mcb-brand {
+          font-size: 6.5px;
+          font-weight: 700;
+          color: var(--text-sub);
+          text-transform: uppercase;
+          letter-spacing: 0.3px;
+        }
+
+        .mcb-switch-slot {
+          width: 13px;
+          height: 34px;
+          background: #0a0a0a;
+          border-radius: 7px;
+          padding: 2px;
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-start;
+          border: 1px solid var(--card-border);
+          box-sizing: border-box;
+          transition: all 0.2s ease;
+        }
+
+        .mcb.active .mcb-switch-slot {
+          justify-content: flex-end;
+        }
+
+        .mcb-toggle {
+          width: 100%;
+          height: 15px;
+          border-radius: 4px;
+          transition: all 0.2s ease;
+        }
+
+        .mcb-rating {
+          font-size: 9.5px;
+          font-weight: 700;
+          letter-spacing: -0.2px;
+        }
+
+        .c25 .mcb-toggle { background: var(--c25-color); }
+        .c25 .mcb-rating { color: var(--c25-color); }
+
+        .c20 .mcb-toggle { background: var(--c20-color); }
+        .c20 .mcb-rating { color: var(--c20-color); }
+
+        .c16 .mcb-toggle { background: var(--c16-color); }
+        .c16 .mcb-rating { color: var(--c16-color); }
+
+        .c10 .mcb-toggle { background: var(--c10-color); }
+        .c10 .mcb-rating { color: var(--c10-color); }
+
+        /* Custom Circuit Colors for MCBs */
+        .mcb[style*="--mcb-accent"] .mcb-toggle {
+          background: var(--mcb-accent) !important;
+        }
+
+        .mcb[style*="--mcb-accent"] .mcb-rating {
+          color: var(--mcb-accent) !important;
+        }
+
+        .mcb[style*="--mcb-accent"]:hover::before,
+        .mcb[style*="--mcb-accent"].active::before {
+          border-color: var(--mcb-accent) !important;
+          box-shadow: 0 0 10px var(--mcb-soft) !important;
+        }
+
+
+        /* Circuit Filter Highlights & Dimming */
+        .fp-device {
+          transition: opacity 0.3s ease, filter 0.25s ease;
+        }
+
+        .fp-device.circuit-dimmed,
+        .room-group.circuit-dimmed {
+          opacity: 0.18 !important;
+          filter: grayscale(0.6);
+          transition: opacity 0.3s ease, filter 0.3s ease;
+        }
+
+        .fp-device.circuit-highlighted {
+          opacity: 1 !important;
+          animation: circuit-pulse 2.2s infinite ease-in-out;
+        }
+
+        .fp-device.circuit-highlighted .device-badge {
+          fill: var(--circuit-soft, rgba(122, 162, 247, 0.28)) !important;
+          stroke: var(--circuit-color, #7aa2f7) !important;
+          stroke-width: 2.6px !important;
+          filter: drop-shadow(0 0 12px var(--circuit-color, #7aa2f7));
+        }
+
+        .fp-device.circuit-highlighted ha-icon {
+          color: var(--circuit-color, #7aa2f7) !important;
+          filter: drop-shadow(0 0 6px var(--circuit-color, #7aa2f7));
+        }
+
+        .fp-device.circuit-highlighted .device-icon {
+          filter: drop-shadow(0 0 6px var(--circuit-color, #7aa2f7));
+        }
+
+        @keyframes circuit-pulse {
+          0% {
+            filter: drop-shadow(0 0 4px var(--circuit-color, #7aa2f7));
+          }
+          50% {
+            filter: drop-shadow(0 0 14px var(--circuit-color, #7aa2f7));
+          }
+          100% {
+            filter: drop-shadow(0 0 4px var(--circuit-color, #7aa2f7));
+          }
+        }
+
         /* Coordinate Tooltip Toast */
         .coord-toast {
           position: absolute;
@@ -348,6 +725,34 @@
           gap: 8px;
           margin-bottom: 12px;
           line-height: 1;
+        }
+
+        .popover-title-wrap {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .popover-circuit-tag {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          background: var(--tag-soft, rgba(122, 162, 247, 0.15));
+          border: 1px solid var(--tag-color, #7aa2f7);
+          color: var(--tag-color, #7aa2f7);
+          padding: 1px 7px;
+          border-radius: 5px;
+          font-size: 0.65rem;
+          font-weight: 600;
+          line-height: 1.2;
+          width: fit-content;
+        }
+
+        .popover-circuit-tag ha-icon {
+          --mdc-icon-size: 11px;
+          width: 11px;
+          height: 11px;
+          color: inherit !important;
         }
 
         .popover-header ha-icon {
