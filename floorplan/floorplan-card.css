@@ -768,6 +768,11 @@
           line-height: 1;
         }
 
+        .popover-header:last-child,
+        .popover-header.no-content {
+          margin-bottom: 0;
+        }
+
         .popover-header-row {
           display: flex;
           align-items: center;
@@ -954,6 +959,28 @@
 
         .entry-card.is-strip .entry-header ha-icon {
           color: var(--c20-color);
+        }
+
+        .entry-card.is-switch {
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          background: rgba(255, 255, 255, 0.04);
+        }
+
+        .entry-card.is-switch .entry-header ha-icon {
+          color: var(--c10-color, #9ece6a);
+          --mdc-icon-size: 15px;
+          width: 15px;
+          height: 15px;
+        }
+
+        .entry-card.is-switch .entry-type-tag {
+          background: rgba(158, 206, 106, 0.12);
+          border: 1px solid rgba(158, 206, 106, 0.25);
+          color: var(--c10-color, #9ece6a);
+          font-size: 0.65rem;
+          font-weight: 600;
+          padding: 2px 6px;
+          border-radius: 4px;
         }
 
         .entry-card.is-direct .entry-header ha-icon {

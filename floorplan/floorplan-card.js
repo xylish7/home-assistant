@@ -207,7 +207,7 @@ class ApartmentFloorplanCard extends HTMLElement {
   _render() {
     this.shadowRoot.innerHTML = `
       <style>
-        @import url('/local/custom/floorplan/floorplan-card.css?v=33');
+        @import url('/local/custom/floorplan/floorplan-card.css?v=40');
       </style>
 
       <div class="toolbar-wrap">
@@ -606,6 +606,31 @@ class ApartmentFloorplanCard extends HTMLElement {
           dev.type === "electric-panel" ||
           dev.panel === true;
 
+        const isSwitch =
+          dev.type === "light-switch" ||
+          dev.type === "light_switch" ||
+          dev.type === "lightswitch" ||
+          dev.type === "intrerupator" ||
+          dev.type === "comutator" ||
+          (dev.type === "switch" && !dev.entity) ||
+          dev.switches !== undefined ||
+          dev.gangs !== undefined ||
+          dev.clape !== undefined;
+
+        let switchCount = 1;
+        if (Array.isArray(dev.switches)) {
+          switchCount = dev.switches.length;
+        } else if (Array.isArray(dev.gangs)) {
+          switchCount = dev.gangs.length;
+        } else if (Array.isArray(dev.clape)) {
+          switchCount = dev.clape.length;
+        } else {
+          const countVal = dev.switches ?? dev.gangs ?? dev.clape ?? dev.buttons ?? dev.slots ?? dev.count;
+          if (countVal !== undefined && countVal !== null && !isNaN(Number(countVal))) {
+            switchCount = Math.max(1, parseInt(countVal, 10));
+          }
+        }
+
         const r = Number(dev.size) || (isPanel ? 15 : 14);
         const iconSize = isPanel ? 18 : 16;
 
@@ -614,6 +639,10 @@ class ApartmentFloorplanCard extends HTMLElement {
           icon = (!icon || icon === "mdi:fuse-box" || icon === "??" || icon === "?")
             ? "mdi:electric-switch"
             : icon;
+        } else if (isSwitch) {
+          if (!icon || icon === "??" || icon === "?") {
+            icon = "mdi:light-switch";
+          }
         } else if (!icon || icon === "??" || icon === "?") {
           if (
             dev.type === "socket" ||
@@ -665,15 +694,62 @@ class ApartmentFloorplanCard extends HTMLElement {
       const rect = el.getBoundingClientRect();
       const contRect = container.getBoundingClientRect();
 
+      const isPanel =
+        dev.type === "panel" ||
+        dev.type === "electrical-panel" ||
+        dev.type === "electric-panel" ||
+        dev.panel === true;
+
+      const isSwitch =
+        dev.type === "light-switch" ||
+        dev.type === "light_switch" ||
+        dev.type === "lightswitch" ||
+        dev.type === "intrerupator" ||
+        dev.type === "comutator" ||
+        (dev.type === "switch" && !dev.entity) ||
+        dev.switches !== undefined ||
+        dev.gangs !== undefined ||
+        dev.clape !== undefined;
+
+      let switchCount = 1;
+      if (Array.isArray(dev.switches)) {
+        switchCount = dev.switches.length;
+      } else if (Array.isArray(dev.gangs)) {
+        switchCount = dev.gangs.length;
+      } else if (Array.isArray(dev.clape)) {
+        switchCount = dev.clape.length;
+      } else {
+        const countVal = dev.switches ?? dev.gangs ?? dev.clape ?? dev.buttons ?? dev.slots ?? dev.count;
+        if (countVal !== undefined && countVal !== null && !isNaN(Number(countVal))) {
+          switchCount = Math.max(1, parseInt(countVal, 10));
+        }
+      }
+
       const devName =
-        dev.name || (dev.type === "socket" ? "Priza de Perete" : "Dispozitiv");
-      let icon =
-        dev.icon ||
-        (dev.type === "socket"
+        dev.name ||
+        (isSwitch
+          ? (switchCount === 1 ? "Întrerupător" : switchCount === 2 ? "Întrerupător dublu" : switchCount === 3 ? "Întrerupător triplu" : `Întrerupător (${switchCount} clape)`)
+          : dev.type === "socket"
+            ? "Priza de Perete"
+            : "Dispozitiv");
+
+      let icon = dev.icon;
+      if (isPanel) {
+        icon = (!icon || icon === "mdi:fuse-box" || icon === "??" || icon === "?")
+          ? "mdi:electric-switch"
+          : icon;
+      } else if (isSwitch) {
+        if (!icon || icon === "??" || icon === "?") {
+          icon = "mdi:light-switch";
+        }
+      } else if (!icon || icon === "??" || icon === "?") {
+        icon = (dev.type === "socket")
           ? "mdi:power-socket-eu"
           : dev.entity
             ? "mdi:lightbulb"
-            : "mdi:power-socket-eu");
+            : "mdi:power-socket-eu";
+      }
+
       const isMdi = icon.includes(":");
       const iconHtml = isMdi
         ? `<ha-icon icon="${icon}"></ha-icon>`
@@ -786,7 +862,10 @@ class ApartmentFloorplanCard extends HTMLElement {
 
       let contentHtml = "";
 
-      if (normalizedEntries.length > 0) {
+      // For light switches: display only top part (no bottom entries)
+      if (isSwitch) {
+        contentHtml = "";
+      } else if (normalizedEntries.length > 0) {
         contentHtml = `
           <div class="socket-entries">
             ${normalizedEntries
@@ -886,10 +965,12 @@ class ApartmentFloorplanCard extends HTMLElement {
         `;
       }
 
-      const totalBadge =
-        totalSlots > 0
-          ? `<span class="socket-total-badge">${usedCount}/${totalSlots}</span>`
-          : "";
+      let totalBadge = "";
+      if (isSwitch) {
+        totalBadge = `<span class="socket-total-badge">${switchCount} ${switchCount === 1 ? "clapă" : "clape"}</span>`;
+      } else if (totalSlots > 0) {
+        totalBadge = `<span class="socket-total-badge">${usedCount}/${totalSlots}</span>`;
+      }
 
       const devCirc = this._getDeviceCircuit(dev, circuits);
       let circuitBadgeHtml = "";
@@ -959,8 +1040,20 @@ class ApartmentFloorplanCard extends HTMLElement {
         return;
       }
 
+      const isSwitch =
+        dev.type === "light-switch" ||
+        dev.type === "light_switch" ||
+        dev.type === "lightswitch" ||
+        dev.type === "intrerupator" ||
+        dev.type === "comutator" ||
+        (dev.type === "switch" && !dev.entity) ||
+        dev.switches !== undefined ||
+        dev.gangs !== undefined ||
+        dev.clape !== undefined;
+
       const hasEntries =
         dev.type === "socket" ||
+        isSwitch ||
         (Array.isArray(dev.entries) && dev.entries.length > 0) ||
         Boolean(dev.slots) ||
         (Array.isArray(dev.strips) && dev.strips.length > 0) ||
@@ -1035,4 +1128,25 @@ class ApartmentFloorplanCard extends HTMLElement {
   }
 }
 
-customElements.define("apartment-floorplan-card", ApartmentFloorplanCard);
+if (!customElements.get("apartment-floorplan-card")) {
+  customElements.define("apartment-floorplan-card", ApartmentFloorplanCard);
+}
+if (!customElements.get("apartment-floor-card")) {
+  customElements.define("apartment-floor-card", ApartmentFloorplanCard);
+}
+
+window.customCards = window.customCards || [];
+if (!window.customCards.some((c) => c.type === "apartment-floorplan-card")) {
+  window.customCards.push({
+    type: "apartment-floorplan-card",
+    name: "Apartment Floorplan Card",
+    description: "Interactive apartment floorplan card with electrical panel & circuits",
+  });
+}
+if (!window.customCards.some((c) => c.type === "apartment-floor-card")) {
+  window.customCards.push({
+    type: "apartment-floor-card",
+    name: "Apartment Floor Card",
+    description: "Interactive apartment floor card with electrical panel & circuits",
+  });
+}
