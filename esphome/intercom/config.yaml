@@ -8,7 +8,7 @@ esphome:
     # -------------------------------------------------------------------------
     - priority: 600
       then:
-        - delay: 30ms   # Allow power rail and internal reference to settle
+        - delay: 30ms # Allow power rail and internal reference to settle
         - repeat:
             count: 15
             then:
@@ -29,7 +29,7 @@ esphome:
                   format: ">>> Auto mode active! Opening door immediately..."
                   tag: "INTERCOM"
                   level: INFO
-              
+
               - script.execute: physical_open_sequence
               - script.wait: physical_open_sequence
 
@@ -49,7 +49,11 @@ esphome:
                   then:
                     - logger.log:
                         format: ">>> Stable Battery: %.2f V (%.0f%%)"
-                        args: [ 'id(batt_voltage).state', 'id(batt_percentage).state' ]
+                        args:
+                          [
+                            "id(batt_voltage).state",
+                            "id(batt_percentage).state",
+                          ]
                         tag: "INTERCOM"
                         level: INFO
 
@@ -89,18 +93,22 @@ esphome:
                   then:
                     - logger.log:
                         format: ">>> Stable Battery: %.2f V (%.0f%%)"
-                        args: [ 'id(batt_voltage).state', 'id(batt_percentage).state' ]
+                        args:
+                          [
+                            "id(batt_voltage).state",
+                            "id(batt_percentage).state",
+                          ]
                         tag: "INTERCOM"
                         level: INFO
 
                     - logger.log:
-                        format: ">>> Ring detected & HA connected! Waiting 25s for trigger..."
+                        format: ">>> Ring detected & HA connected! Waiting 15s for trigger..."
                         tag: "INTERCOM"
                         level: INFO
                     - binary_sensor.template.publish:
                         id: call_sensor
                         state: ON
-                    - delay: 25s
+                    - delay: 15s
                     - binary_sensor.template.publish:
                         id: call_sensor
                         state: OFF
@@ -223,6 +231,13 @@ button:
     on_press:
       - script.execute: manual_open_sequence
 
+  - platform: template
+    name: "Cancel Call"
+    id: btn_cancel
+    icon: "mdi:phone-hangup"
+    on_press:
+      - script.execute: manual_cancel_sequence
+
 script:
   - id: physical_open_sequence
     mode: restart
@@ -247,6 +262,22 @@ script:
     then:
       - script.execute: physical_open_sequence
       - script.wait: physical_open_sequence
+      - binary_sensor.template.publish:
+          id: call_sensor
+          state: OFF
+      - delay: 300ms
+      - deep_sleep.enter: sleep_module
+
+  - id: manual_cancel_sequence
+    mode: restart
+    then:
+      - logger.log:
+          format: ">>> Call cancelled by user. Rejecting and going to sleep..."
+          tag: "INTERCOM"
+          level: INFO
+      - output.turn_on: out_hook
+      - delay: 600ms
+      - output.turn_off: out_hook
       - binary_sensor.template.publish:
           id: call_sensor
           state: OFF
