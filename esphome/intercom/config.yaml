@@ -21,105 +21,48 @@ esphome:
     # -------------------------------------------------------------------------
     - priority: -100
       then:
+        - logger.log:
+            format: ">>> Ring detected! Waiting up to 15s for HA connection..."
+            tag: "INTERCOM"
+            level: INFO
+        - wait_until:
+            timeout: 15s
+            condition:
+              api.connected:
+
         - if:
             condition:
-              switch.is_on: sw_auto_unlock
+              api.connected:
             then:
               - logger.log:
-                  format: ">>> Auto mode active! Opening door immediately..."
+                  format: ">>> Stable Battery: %.2f V (%.0f%%)"
+                  args:
+                    [
+                      "id(batt_voltage).state",
+                      "id(batt_percentage).state",
+                    ]
                   tag: "INTERCOM"
                   level: INFO
-
-              - script.execute: physical_open_sequence
-              - script.wait: physical_open_sequence
 
               - logger.log:
-                  format: ">>> Door opened. Waiting up to 15s for HA API connection..."
+                  format: ">>> HA connected! Ring published, waiting for command..."
                   tag: "INTERCOM"
                   level: INFO
-
-              - wait_until:
-                  timeout: 15s
-                  condition:
-                    api.connected:
-
-              - if:
-                  condition:
-                    api.connected:
-                  then:
-                    - logger.log:
-                        format: ">>> Stable Battery: %.2f V (%.0f%%)"
-                        args:
-                          [
-                            "id(batt_voltage).state",
-                            "id(batt_percentage).state",
-                          ]
-                        tag: "INTERCOM"
-                        level: INFO
-
-                    - binary_sensor.template.publish:
-                        id: call_sensor
-                        state: ON
-                    - logger.log:
-                        format: ">>> Connected! 15s window open for dashboard changes..."
-                        tag: "INTERCOM"
-                        level: INFO
-                    - delay: 15s
-                    - binary_sensor.template.publish:
-                        id: call_sensor
-                        state: OFF
-                    - delay: 500ms
-                  else:
-                    - logger.log:
-                        format: ">>> Wi-Fi/HA connection timed out. Entering sleep."
-                        tag: "INTERCOM"
-                        level: WARN
-
-              - deep_sleep.enter: sleep_module
-
+              - binary_sensor.template.publish:
+                  id: call_sensor
+                  state: ON
+              - delay: 15s
+              - binary_sensor.template.publish:
+                  id: call_sensor
+                  state: OFF
+              - delay: 500ms
             else:
               - logger.log:
-                  format: ">>> Manual mode: waiting up to 15s for HA connection..."
+                  format: ">>> Failed to connect to HA in time. Entering sleep."
                   tag: "INTERCOM"
-                  level: INFO
-              - wait_until:
-                  timeout: 15s
-                  condition:
-                    api.connected:
+                  level: WARN
 
-              - if:
-                  condition:
-                    api.connected:
-                  then:
-                    - logger.log:
-                        format: ">>> Stable Battery: %.2f V (%.0f%%)"
-                        args:
-                          [
-                            "id(batt_voltage).state",
-                            "id(batt_percentage).state",
-                          ]
-                        tag: "INTERCOM"
-                        level: INFO
-
-                    - logger.log:
-                        format: ">>> Ring detected & HA connected! Waiting 15s for trigger..."
-                        tag: "INTERCOM"
-                        level: INFO
-                    - binary_sensor.template.publish:
-                        id: call_sensor
-                        state: ON
-                    - delay: 15s
-                    - binary_sensor.template.publish:
-                        id: call_sensor
-                        state: OFF
-                    - delay: 500ms
-                  else:
-                    - logger.log:
-                        format: ">>> Failed to connect to HA in time. Entering sleep."
-                        tag: "INTERCOM"
-                        level: WARN
-
-              - deep_sleep.enter: sleep_module
+        - deep_sleep.enter: sleep_module
 
 esp32:
   variant: esp32c3
@@ -169,14 +112,6 @@ output:
   - platform: gpio
     pin: GPIO5
     id: out_unlock
-
-switch:
-  - platform: template
-    name: "Auto-Unlock Mode"
-    id: sw_auto_unlock
-    icon: "mdi:lock-open-check"
-    optimistic: true
-    restore_mode: RESTORE_DEFAULT_OFF
 
 binary_sensor:
   - platform: template
